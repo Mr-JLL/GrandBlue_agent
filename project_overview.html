@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>my-agent 项目全貌</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #f5f6fa; color: #2d3436; line-height: 1.7; }
+  .container { max-width: 960px; margin: 0 auto; padding: 40px 20px; }
+  h1 { font-size: 2rem; color: #2d3436; margin-bottom: 8px; }
+  .subtitle { color: #636e72; margin-bottom: 40px; font-size: 1rem; }
+  h2 { font-size: 1.2rem; color: #2d3436; margin: 32px 0 16px; padding-left: 12px; border-left: 4px solid #6c5ce7; }
+  h3 { font-size: 1rem; color: #636e72; margin: 20px 0 10px; }
+  p { margin-bottom: 12px; }
+  .card { background: #fff; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .tag-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+  .tag { background: #f0edff; color: #6c5ce7; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; }
+  .tag.green { background: #e8f8f0; color: #00b894; }
+  .tag.blue { background: #e8f4fd; color: #0984e3; }
+  .tag.orange { background: #fff3e0; color: #e17055; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  th { background: #f8f9fa; padding: 10px 14px; text-align: left; font-weight: 600; color: #636e72; border-bottom: 2px solid #e9ecef; }
+  td { padding: 10px 14px; border-bottom: 1px solid #f1f3f4; }
+  tr:last-child td { border-bottom: none; }
+  .check { color: #00b894; font-weight: bold; }
+  .cross { color: #d63031; }
+  .timeline { position: relative; }
+  .phase { display: flex; gap: 20px; margin-bottom: 20px; }
+  .phase-num { width: 40px; height: 40px; border-radius: 50%; background: #6c5ce7; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0; font-size: 0.9rem; }
+  .phase-num.green { background: #00b894; }
+  .phase-num.blue { background: #0984e3; }
+  .phase-num.orange { background: #e17055; }
+  .phase-content { flex: 1; }
+  .phase-title { font-weight: 700; margin-bottom: 4px; }
+  .phase-milestone { color: #6c5ce7; font-size: 0.88rem; margin-bottom: 8px; }
+  .phase-milestone.green { color: #00b894; }
+  .phase-milestone.blue { color: #0984e3; }
+  .phase-milestone.orange { color: #e17055; }
+  .week-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .week-item { background: #f8f9fa; border-radius: 8px; padding: 10px 12px; font-size: 0.85rem; }
+  .week-label { font-weight: 600; color: #636e72; font-size: 0.78rem; margin-bottom: 2px; }
+  code { background: #f1f3f4; padding: 2px 6px; border-radius: 4px; font-family: "JetBrains Mono", Consolas, monospace; font-size: 0.88em; color: #e84393; }
+  pre { background: #2d3436; color: #dfe6e9; padding: 20px; border-radius: 10px; overflow-x: auto; font-size: 0.85rem; line-height: 1.6; font-family: "JetBrains Mono", Consolas, monospace; }
+  .flow { background: #f8f9fa; border-radius: 10px; padding: 20px; font-family: "JetBrains Mono", Consolas, monospace; font-size: 0.85rem; line-height: 2; }
+  .alert { background: #fff3cd; border-left: 4px solid #ffc107; padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 16px 0; font-size: 0.9rem; }
+  .alert.purple { background: #f0edff; border-color: #6c5ce7; }
+  .diff-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .diff-card { background: #f8f9fa; border-radius: 10px; padding: 16px; }
+  .diff-card h4 { font-size: 0.95rem; margin-bottom: 10px; color: #636e72; }
+  .diff-card ul { list-style: none; }
+  .diff-card li { padding: 4px 0; font-size: 0.88rem; }
+  .diff-card li::before { content: "• "; color: #6c5ce7; }
+  .accept-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .accept-card { background: #f8f9fa; border-radius: 10px; padding: 14px; text-align: center; }
+  .accept-card .num { font-size: 1.5rem; font-weight: 700; color: #6c5ce7; }
+  .accept-card .label { font-size: 0.82rem; color: #636e72; margin-top: 4px; }
+  /* 三类文件标签 */
+  .cat { display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 0.75rem; font-weight: 600; margin-left: 4px; vertical-align: middle; }
+  .cat1 { background: #e8f8f0; color: #00b894; }   /* 第一类：绿色 */
+  .cat2 { background: #e8f4fd; color: #0984e3; }   /* 第二类：蓝色 */
+  .cat3 { background: #f0edff; color: #6c5ce7; }   /* 第三类：紫色 */
+  .cat-legend { display: flex; gap: 16px; flex-wrap: wrap; margin: 12px 0; font-size: 0.85rem; }
+  .cat-legend-item { display: flex; align-items: center; gap: 6px; }
+  @media (max-width: 600px) {
+    .week-grid { grid-template-columns: 1fr; }
+    .diff-row { grid-template-columns: 1fr; }
+    .accept-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>my-agent 项目全貌</h1>
+  <p class="subtitle">Telegram AI 助手 · 语义记忆 · LangGraph · 面试作品集 &nbsp;|&nbsp; <span style="color:#e17055;">最后更新：2026-06-14</span></p>
+
+  <!-- 已知问题修正 -->
+  <div class="card" style="border-left: 4px solid #d63031; background: #fff5f5;">
+    <h2 style="border-left-color:#d63031;">⚠ 已知问题与修正（2026-06-14）</h2>
+    <table>
+      <tr><th>类型</th><th>问题</th><th>修正方式</th></tr>
+      <tr>
+        <td><span style="color:#d63031;font-weight:bold;">Bug</span></td>
+        <td><code>llm.py</code> 用了 <code>httpx.Client</code>（同步）配 <code>AsyncOpenAI</code></td>
+        <td>改为 <code>httpx.AsyncClient</code>——必须现在修</td>
+      </tr>
+      <tr>
+        <td><span style="color:#e17055;font-weight:bold;">冗余</span></td>
+        <td><code>llm.py</code> 有 <code>from unittest import result</code> 从未被使用</td>
+        <td>删除该行</td>
+      </tr>
+      <tr>
+        <td><span style="color:#fdcb6e;font-weight:bold;">安全</span></td>
+        <td><code>.env</code> 含真实密钥，若 push 到 GitHub 会泄露</td>
+        <td>确认 <code>.gitignore</code> 包含 <code>.env</code></td>
+      </tr>
+      <tr>
+        <td><span style="color:#6c5ce7;font-weight:bold;">计划修正</span></td>
+        <td>原计划"月1-3手写→月4迁移LangGraph"造成月4浪费重构</td>
+        <td>改为：月2手写理解原理，月3直接用LangGraph正式重写（见计划修订）</td>
+      </tr>
+      <tr>
+        <td><span style="color:#6c5ce7;font-weight:bold;">计划修正</span></td>
+        <td>月3直接用 Qdrant Cloud 拖慢本地开发迭代速度</td>
+        <td>月3先用 ChromaDB（本地零部署），月5联调时迁 Qdrant Cloud</td>
+      </tr>
+      <tr>
+        <td><span style="color:#6c5ce7;font-weight:bold;">计划修正</span></td>
+        <td>akashic-agent 和 nanobot 对照读到月6才开始，太晚</td>
+        <td>月2起每完成一个模块就读对应文件，记录差异到 <code>notes.md</code></td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- 技术栈 -->
+  <div class="card">
+    <h2>技术栈</h2>
+    <div class="tag-row">
+      <span class="tag">Python 3.12</span>
+      <span class="tag">DeepSeek API</span>
+      <span class="tag blue">LangGraph（月3起）</span>
+      <span class="tag green">ChromaDB（月3）→ Qdrant Cloud（月5）</span>
+      <span class="tag orange">Tavily Search</span>
+      <span class="tag">python-telegram-bot</span>
+      <span class="tag">Embedding API</span>
+      <span class="tag orange">APScheduler</span>
+    </div>
+    <p style="color:#636e72;font-size:0.9rem;">月2：手写 agent 循环，理解工具调用原理 | 月3：LangGraph 正式重写（不是"迁移"，是用已理解的原理换实现）</p>
+  </div>
+
+  <!-- 项目功能 -->
+  <div class="card">
+    <h2>项目能做什么</h2>
+    <div class="flow">
+用户发消息（Telegram）<br>
+    ↓<br>
+bot.py 接收<br>
+    ↓<br>
+agent（LangGraph图）决策<br>
+    ├── 直接回答 ──→ 调 DeepSeek<br>
+    ├── 需要搜索 ──→ Tavily → 结果给 DeepSeek<br>
+    └── 需要查记忆 → Qdrant 向量检索 → 相关记忆给 DeepSeek<br>
+         ↑<br>
+    每次对话结束：新内容向量化存入 Qdrant<br>
+    记忆超量时：DeepSeek 压缩整合旧记忆<br>
+    ─────────────────<br>
+    【主动推送（月5新增）】<br>
+    scheduler.py 每日定时触发<br>
+         ↓<br>
+    查询 Qdrant 近期记忆<br>
+         ↓<br>
+    DeepSeek 判断"今天有没有值得提醒用户的事"<br>
+         ↓（有则发，没有则跳过）<br>
+    bot.py 主动推送到用户 Telegram
+    </div>
+  </div>
+
+  <!-- 项目架构 -->
+  <div class="card">
+    <h2>项目文件架构</h2>
+    <div class="cat-legend">
+      <span class="cat-legend-item"><span class="cat cat1">第一类</span> 应该能自己写出骨架</span>
+      <span class="cat-legend-item"><span class="cat cat2">第二类</span> 深度理解流程，AI写库调用</span>
+      <span class="cat-legend-item"><span class="cat cat3">第三类</span> 理解目的，AI写实现</span>
+    </div>
+    <pre>my-agent/
+├── [第一类] config.py            ← 读取所有 API key 和配置
+├── [第一类] llm.py               ← 封装 DeepSeek API 调用（async）
+├── [第二类] bot.py               ← Telegram 收发消息
+├── [第二类] agent.py             ← 手写 agent 循环（月2临时版）
+├── [第二类] session.py           ← 当前对话短期记忆
+├── tools/
+│   ├── [第一类] web_search.py    ← 调 Tavily 搜索
+│   └── [第一类] memory_recall.py ← 查询向量数据库，返回相关记忆
+├── memory/
+│   ├── [第一类] embed.py         ← 文字 → 向量
+│   ├── [第三类] store.py         ← 向量数据库增删查
+│   ├── [第三类] search.py        ← 相似度检索 + Rerank
+│   └── [第三类] consolidate.py   ← 记忆超量时 LLM 压缩
+├── agent/               ← 月3用 LangGraph 正式重写
+│   ├── [第一类] state.py         ← LangGraph 状态定义（TypedDict）
+│   ├── [第三类] graph.py         ← LangGraph 图结构（节点+条件路由）
+│   └── [第二类] nodes.py         ← 每个节点的具体逻辑
+├── eval/
+│   └── [第二类] metrics.py       ← Recall@5 评测脚本
+├── [第三类] scheduler.py         ← APScheduler 定时：每日查记忆，LLM 决定是否主动推送
+└── main.py              ← 启动入口</pre>
+    <div class="alert purple" style="margin-top:16px;">
+      <strong>铁律：</strong><code>tools/</code> 永远不得 import <code>agent/</code> 内容，否则产生循环依赖。
+    </div>
+  </div>
+
+  <!-- 每日学习框架 -->
+  <div class="card">
+    <h2>每日学习框架（怎么学 / 每天做什么）</h2>
+
+    <h3 style="color:#2d3436;margin-bottom:8px;">四步公式（每次学新东西都用这个流程）</h3>
+    <table>
+      <tr><th>步骤</th><th>做什么</th><th>怎么知道完成了</th></tr>
+      <tr><td><strong>Step 1 · 读</strong></td><td>读官方文档或教程中关于这个概念的最短解释（≤10分钟）</td><td>能用自己的话说出"这个东西是干什么的"</td></tr>
+      <tr><td><strong>Step 2 · 抄</strong></td><td>把最小可运行的示例代码完整手打一遍（不要复制粘贴）</td><td>代码跑通，没有报错</td></tr>
+      <tr><td><strong>Step 3 · 改</strong></td><td>改其中一个变量/参数，预测结果，然后运行，看对不对</td><td>预测和结果一致；如果不一致，找到原因</td></tr>
+      <tr><td><strong>Step 4 · 用</strong></td><td>把这个知识点用到项目文件里，哪怕只有 3 行</td><td>项目代码里出现了这个知识点，而且能解释为什么这样写</td></tr>
+    </table>
+
+    <h3 style="color:#2d3436;margin:20px 0 8px;">每天最少学习量（工作日 / 休息日）</h3>
+    <table>
+      <tr><th>天类型</th><th>时间</th><th>必须完成</th><th>如果有余力</th></tr>
+      <tr><td>工作日</td><td>3-4 小时</td><td>四步公式走完一个新知识点 + 把它写进项目</td><td>多走一个知识点</td></tr>
+      <tr><td>休息日</td><td>8 小时以上</td><td>完成当周目标文件的第一个可运行版本</td><td>写测试 / 清理代码 / 对照 akashic-agent 看一个文件</td></tr>
+    </table>
+
+    <h3 style="color:#2d3436;margin:20px 0 8px;">第 1 周每日安排示例（config.py 周）</h3>
+    <table>
+      <tr><th>天</th><th>任务</th><th>验收</th></tr>
+      <tr><td>Day 1</td><td>学 <code>python-dotenv</code>：读文档 → 手打示例 → 改变量名 → 跑通</td><td>终端打印出 .env 里的值</td></tr>
+      <tr><td>Day 2</td><td>学 Python dataclass 或字典配置模式</td><td>config.py 第一版写出来，能 <code>from config import cfg</code></td></tr>
+      <tr><td>Day 3</td><td>学 <code>os.environ</code> 与 <code>.env</code> 的区别；加默认值处理</td><td>config.py 加上缺少 key 时的报错提示</td></tr>
+      <tr><td>Day 4</td><td>和 Claude Code 对话：把你写的 config.py 贴进来，问"哪里不规范"</td><td>至少找出 1 个改进点并修掉</td></tr>
+      <tr><td>Day 5（休息日）</td><td>写 llm.py 第一版：调 DeepSeek API 返回一句话</td><td>终端打印出 DeepSeek 的回复</td></tr>
+    </table>
+
+    <h3 style="color:#2d3436;margin:20px 0 8px;">卡住了怎么办</h3>
+    <div class="alert purple">
+      <strong>15分钟规则：</strong>卡住超过 15 分钟，立刻用 print 二分法定位问题（在哪行之前加 print 还正常，在哪行之后就出错）。定位到具体行后再问 Claude Code，把那一行代码 + 报错信息 + "我以为它会做什么" 一起贴给它。<br><br>
+      <strong>不要做的事：</strong>不要先问"这个要怎么学"，先动手；不要一次读完整个文档，只读你现在需要的部分；不要跳过 Step 2 的手打步骤。
+    </div>
+
+    <h3 style="color:#2d3436;margin:20px 0 8px;">如何判断"学会了可以用"</h3>
+    <div class="alert" style="background:#f0fff4;border-left-color:#00b894;">
+      能做到以下三件事就算学会：<br>
+      ① 不看文档，能写出这个知识点的最基本用法<br>
+      ② 能解释"为什么这里用这个而不是别的"<br>
+      ③ 遇到报错，知道去哪里找原因（官方文档 / 打 print / 看报错行号）
+    </div>
+  </div>
+
+  <!-- 6个月计划 -->
+  <div class="card">
+    <h2>6 个月计划</h2>
+    <div class="timeline">
+
+      <div class="phase">
+        <div class="phase-num">1</div>
+        <div class="phase-content">
+          <div class="phase-title">月 1：能跑起来的最小 bot</div>
+          <div class="phase-milestone">里程碑：Telegram 发消息，bot 用 DeepSeek 回复，5次不崩溃</div>
+          <div class="week-grid">
+            <div class="week-item"><div class="week-label">第1周</div><span class="cat cat1">第一类</span> <code>config.py</code> — 学 .env + 写读取函数<br><span style="color:#636e72;font-size:0.8em;">前置：不看代码能写"读.env返回值"的函数</span></div>
+            <div class="week-item"><div class="week-label">第2周</div><span class="cat cat1">第一类</span> <code>llm.py</code> — 完成5题训练后写 async版<br><span style="color:#636e72;font-size:0.8em;">前置：独立完成 httpbin.org/get 练习</span></div>
+            <div class="week-item"><div class="week-label">第3周</div>给 llm.py 加 retry + 超时处理（async 感染性深化）</div>
+            <div class="week-item"><div class="week-label">第4周</div><span class="cat cat2">第二类</span> <code>bot.py</code> + <code>main.py</code><br><span style="color:#636e72;font-size:0.8em;">前置：能用中文说清楚"消息进来→调agent→发回去"每一步</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="phase">
+        <div class="phase-num">2</div>
+        <div class="phase-content">
+          <div class="phase-title">月 2：手写 agent 循环 + 工具调用 + LangGraph 预学</div>
+          <div class="phase-milestone">里程碑：bot 能搜索网络，记住当前对话；能独立写最简 LangGraph 图</div>
+          <div class="week-grid">
+            <div class="week-item"><div class="week-label">第5周</div>类型注解 + try/except + Function Calling 概念 → 改进 llm.py</div>
+            <div class="week-item"><div class="week-label">第6周</div><span class="cat cat2">第二类</span> <code>agent.py</code>（手写版）<br><span style="color:#636e72;font-size:0.8em;">前置：手写 while 循环→调函数→检查返回值key→有继续没有退出</span><br><span style="color:#6c5ce7;font-size:0.8em;">完成后读 nanobot/agent/runner.py 前100行</span></div>
+            <div class="week-item"><div class="week-label">第7周</div><span class="cat cat1">第一类</span> <code>tools/web_search.py</code> + <span class="cat cat2">第二类</span> <code>session.py</code><br><span style="color:#636e72;font-size:0.8em;">前置web_search：同llm.py模式 | 前置session：手写列表存最后N条消息的类</span></div>
+            <div class="week-item"><div class="week-label">第8周</div>LangGraph 概念预学：只跑官方最小例子，不写项目<br><span style="color:#00b894;font-size:0.8em;">目标：能独立写2节点图</span></div>
+          </div>
+          <div class="alert purple" style="margin-top:10px;font-size:0.85rem;">月2结束后你有完整能跑的手写 agent.py——月3的LangGraph重写是把这个逻辑"翻译"过去，不是重新设计。</div>
+        </div>
+      </div>
+
+      <div class="phase">
+        <div class="phase-num green">3</div>
+        <div class="phase-content">
+          <div class="phase-title">月 3：LangGraph 正式版 + 跨会话语义记忆</div>
+          <div class="phase-milestone green">里程碑：LangGraph 版与手写版输出一致；跨对话记住你，检索相关率 &gt; 60%</div>
+          <div class="week-grid">
+            <div class="week-item"><div class="week-label">第9周</div><span class="cat cat1">第一类</span> <code>agent/state.py</code> + <span class="cat cat2">第二类</span> <code>nodes.py</code><br><span style="color:#636e72;font-size:0.8em;">前置：手写 TypedDict 定义 + 能用中文说清楚"节点=函数"的含义</span><br><span style="color:#6c5ce7;font-size:0.8em;">完成后读 nanobot/agent/runner.py（完整）</span></div>
+            <div class="week-item"><div class="week-label">第10周</div><span class="cat cat2">第二类</span> <code>agent/graph.py</code>（LangGraph 条件路由）<br><span style="color:#636e72;font-size:0.8em;">前置：独立跑通官方最小2节点图（第8周已完成）</span></div>
+            <div class="week-item"><div class="week-label">第11周</div><span class="cat cat2">第二类</span> <code>memory/embed.py</code> + <span class="cat cat2">第二类</span> <code>memory/store.py</code><br><span style="color:#636e72;font-size:0.8em;">前置：用 requests 调任意 embedding API，把向量打印出来</span><br><span style="color:#6c5ce7;font-size:0.8em;">先本地ChromaDB，月5再迁Qdrant</span></div>
+            <div class="week-item"><div class="week-label">第12周</div><span class="cat cat3">第三类</span> <code>memory/search.py</code> + <span class="cat cat2">第二类</span> <code>tools/memory_recall.py</code><br><span style="color:#636e72;font-size:0.8em;">前置：理解余弦相似度含义（不需手推，能调用即可）</span><br><span style="color:#6c5ce7;font-size:0.8em;">完成后读 nanobot/agent/memory.py</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="phase">
+        <div class="phase-num blue">4</div>
+        <div class="phase-content">
+          <div class="phase-title">月 4：记忆压缩 + 评测体系（原"LangGraph迁移"已提前到月3）</div>
+          <div class="phase-milestone blue">里程碑：记忆自动压缩；Recall@5 有数字；Rerank 有量化提升证据</div>
+          <div class="week-grid">
+            <div class="week-item"><div class="week-label">第13周</div><span class="cat cat3">第三类</span> <code>memory/consolidate.py</code>（记忆超20条自动压缩）<br><span style="color:#636e72;font-size:0.8em;">前置：用中文说清楚"什么时机触发、压成什么格式"再动手</span></div>
+            <div class="week-item"><div class="week-label">第14周</div><span class="cat cat3">第三类</span> <code>eval/metrics.py</code>（Recall@5 框架）<br><span style="color:#636e72;font-size:0.8em;">前置：手写函数 recall_at_k(retrieved, relevant, k) → 返回0-1分数</span></div>
+            <div class="week-item"><div class="week-label">第15周</div>完善 Rerank 逻辑 → Recall@5 Rerank 前后对比数字<br><span style="color:#636e72;font-size:0.8em;">前置：能读懂上周 metrics.py 每一行</span></div>
+            <div class="week-item"><div class="week-label">第16周</div>全功能联调：月1-3所有验收测试必须仍通过</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="phase">
+        <div class="phase-num orange">5</div>
+        <div class="phase-content">
+          <div class="phase-title">月 5：Qdrant 迁移 + 主动推送 + 完整联调</div>
+          <div class="phase-milestone orange">里程碑：Qdrant Cloud 接入；每天主动推送消息；项目无严重 bug</div>
+          <div class="week-grid">
+            <div class="week-item"><div class="week-label">第17周</div><span class="cat cat2">第二类</span> <code>memory/store.py</code> 从 ChromaDB 迁到 <strong>Qdrant Cloud</strong><br><span style="color:#636e72;font-size:0.8em;">前置：读完 Qdrant Python SDK 快速入门，能独立 upsert 一条向量</span><br><span style="color:#636e72;font-size:0.8em;">写迁移前后接口差异记录（面试素材）</span></div>
+            <div class="week-item"><div class="week-label">第18周</div><span class="cat cat2">第二类</span> <code>scheduler.py</code>（APScheduler 定时推送）<br><span style="color:#636e72;font-size:0.8em;">前置：独立写一个每5秒打印时间的 APScheduler 定时任务</span></div>
+            <div class="week-item"><div class="week-label">第19周</div>完善所有外部依赖的错误处理：网络超时、Qdrant 连接失败、Tavily 限流</div>
+            <div class="week-item"><div class="week-label">第20周</div>全系统压测：连续对话20轮，触发记忆压缩，触发主动推送，连续运行1小时</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="phase">
+        <div class="phase-num" style="background:#b2bec3;">6</div>
+        <div class="phase-content">
+          <div class="phase-title">月 6：对照收尾 + 面试准备</div>
+          <div class="phase-milestone" style="color:#b2bec3;">里程碑：能 10 分钟口头讲解整个项目，notes.md 有 20+ 条有观点的差异记录</div>
+          <div class="week-grid">
+            <div class="week-item"><div class="week-label">第21周</div>整理 notes.md：把月2-5积累的 nanobot/akashic 差异点归类（设计/性能/健壮性）</div>
+            <div class="week-item"><div class="week-label">第22周</div>基于差异记录，针对性重构 1-2 个模块，写改动理由</div>
+            <div class="week-item"><div class="week-label">第23周</div>整理面试叙述：每个模块的设计理由 + debug 经历 + 与参照项目的对比</div>
+            <div class="week-item"><div class="week-label">第24周</div>写 README + 录演示视频，项目可直接发给面试官</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 验收标准 -->
+  <div class="card">
+    <h2>月度验收标准</h2>
+    <table>
+      <tr><th>月份</th><th>验收标准（可测试）</th></tr>
+      <tr><td>月 1</td><td>Telegram 发消息，bot 10秒内回复，连续 5 次不崩溃</td></tr>
+      <tr><td>月 2</td><td>问天气 bot 调 Tavily；同会话问"我刚才问什么"能回答</td></tr>
+      <tr><td>月 3</td><td>LangGraph 版与手写版对同组输入输出一致；15条记忆存入后随机提问，前3条相关率 &gt; 60%</td></tr>
+      <tr><td>月 4</td><td>Recall@5 有数字（含 Rerank 前后对比）；记忆超量自动压缩；月2月3测试仍通过</td></tr>
+      <tr><td>月 5</td><td>Qdrant Cloud 接入；scheduler.py 每天定时发主动消息；工具失败时 bot 不崩溃</td></tr>
+      <tr><td>月 6</td><td>随机打断能当场回答任意模块；notes.md 有 20+ 条有观点的差异记录；README 写好</td></tr>
+    </table>
+  </div>
+
+  <!-- JD覆盖 -->
+  <div class="card">
+    <h2>JD 考察点覆盖（12条）</h2>
+    <table>
+      <tr><th>#</th><th>JD 要求</th><th>实现方式</th><th>状态</th></tr>
+      <tr><td>1</td><td>Python（async/类型注解/异常）</td><td>贯穿所有文件的代码风格</td><td class="check">✅</td></tr>
+      <tr><td>2</td><td>LangGraph 深入</td><td>agent/ 目录，月4实现</td><td class="check">✅</td></tr>
+      <tr><td>3</td><td>LLM API + 异常处理</td><td>llm.py + nodes.py retry</td><td class="check">✅</td></tr>
+      <tr><td>4</td><td>RAG 全链路</td><td>embed→store→search→rerank→生成</td><td class="check">✅</td></tr>
+      <tr><td>5</td><td>评测体系（Recall@5）</td><td>eval/metrics.py，15个测试案例</td><td class="check">✅</td></tr>
+      <tr><td>6</td><td>异常路径设计</td><td>graph.py 错误节点，工具失败降级</td><td class="check">✅ 简化版</td></tr>
+      <tr><td>7</td><td>Function Calling / Tool Use</td><td>tools/ 目录</td><td class="check">✅</td></tr>
+      <tr><td>8</td><td>Memory 管理（短期+长期）</td><td>session.py + memory/</td><td class="check">✅</td></tr>
+      <tr><td>9</td><td>向量数据库（Qdrant）</td><td>memory/store.py</td><td class="check">✅</td></tr>
+      <tr><td>10</td><td>Prompt Engineering</td><td>nodes.py + consolidate.py</td><td class="check">✅</td></tr>
+      <tr><td>11</td><td>RAG 各步骤</td><td>同第4条</td><td class="check">✅</td></tr>
+      <tr><td>12</td><td>MCP 协议</td><td>跳过（无自然使用场景）</td><td class="cross">❌ 跳过</td></tr>
+    </table>
+  </div>
+
+  <!-- 技术选型 -->
+  <div class="card">
+    <h2>技术选型理由（面试必备）</h2>
+    <table>
+      <tr><th>技术</th><th>替代方案</th><th>选择理由</th><th>接受的代价</th></tr>
+      <tr><td>DeepSeek</td><td>GPT-4、Claude</td><td>价格极低（约GPT-4的1/200），中文好，API格式兼容OpenAI</td><td>复杂推理弱于GPT-4</td></tr>
+      <tr><td>ChromaDB（月3）→ Qdrant（月5）</td><td>全程Qdrant、全程ChromaDB</td><td>ChromaDB 本地零部署加速开发迭代；月5迁 Qdrant 覆盖JD要求；迁移过程本身是面试素材</td><td>需迁移一次，感受两者接口差异</td></tr>
+      <tr><td>Tavily</td><td>SerpAPI、DuckDuckGo</td><td>专为LLM设计（返回干净文本），有免费额度</td><td>较新，文档相对少</td></tr>
+      <tr><td>LangGraph</td><td>纯手写、基础LangChain</td><td>JD明确要求，结构化状态管理优于手写</td><td>额外学习成本</td></tr>
+      <tr><td>python-telegram-bot</td><td>aiogram、telebot</td><td>文档最全，社区最大，v20+原生支持async</td><td>代码比aiogram略啰嗦</td></tr>
+      <tr><td>月2手写→月3 LangGraph重写</td><td>直接用LangGraph / 全程手写</td><td>月2手写理解tool loop原理（用nanobot/runner.py验证），月3用LangGraph重新实现——面试能解释两层：LangGraph的用法 + 它背后解决的问题</td><td>月3有重写工作量，但比"月4迁移"更早用上LangGraph</td></tr>
+      <tr><td>APScheduler</td><td>Celery Beat、cron</td><td>纯 Python 轻量级，不需要额外中间件，异步兼容好</td><td>不适合分布式大规模任务</td></tr>
+    </table>
+  </div>
+
+  <!-- nanobot参照表 -->
+  <div class="card">
+    <h2>nanobot 参照使用方法（月2起，每模块完成后）</h2>
+    <div class="alert purple">
+      <strong>使用原则：</strong> 写完自己的文件后，打开 nanobot 等价文件，只问一个问题："它比我的版本多处理了哪些情况？"答案记录到 <code>notes.md</code>。不需要立刻修改代码，这些记录是月6重构和面试素材的来源。
+    </div>
+    <table>
+      <tr><th>你要写的文件</th><th>完成后读 nanobot</th><th>你会发现</th></tr>
+      <tr><td><code>agent.py</code>（手写循环）</td><td><code>nanobot/agent/runner.py</code>（前100行）</td><td>tool_call 解析方式、迭代终止条件</td></tr>
+      <tr><td><code>tools/web_search.py</code></td><td><code>nanobot/agent/tools/web.py</code></td><td>结果截断、超时处理</td></tr>
+      <tr><td><code>session.py</code></td><td><code>nanobot/session/manager.py</code></td><td>JSONL 格式存储对话历史</td></tr>
+      <tr><td><code>memory/consolidate.py</code></td><td><code>nanobot/agent/memory.py</code></td><td>触发时机设计</td></tr>
+      <tr><td><code>agent/nodes.py</code>（LangGraph版）</td><td><code>nanobot/agent/runner.py</code>（完整）</td><td>完整 tool loop 生产级实现</td></tr>
+    </table>
+  </div>
+
+  <!-- 与akashic-agent对比 -->
+  <div class="card">
+    <h2>与 akashic-agent 对比</h2>
+    <div class="diff-row">
+      <div class="diff-card">
+        <h4>akashic-agent 有但你没有</h4>
+        <ul>
+          <li>QQ 渠道支持</li>
+          <li>Plugin 系统（10+ 插件）</li>
+          <li>Web Dashboard</li>
+          <li>主动行为（RSS 推送）</li>
+          <li>Peer agent 协作</li>
+        </ul>
+      </div>
+      <div class="diff-card">
+        <h4>你有但 akashic-agent 没有</h4>
+        <ul>
+          <li>Recall@5 评测脚本（量化检索效果）</li>
+          <li>Rerank 前后对比数据</li>
+          <li>LangGraph 框架（它用自定义循环）</li>
+          <li>每个设计决策的明确文档</li>
+          <li>简单主动推送（scheduler.py，基于记忆决策）</li>
+        </ul>
+      </div>
+    </div>
+    <div class="alert purple" style="margin-top:16px;">
+      <strong>面试叙述：</strong>"相比 akashic-agent，我的项目更聚焦：加入了它没有的 Recall@5 评测体系，能量化说明记忆检索有效性；同时实现了简单版主动推送——区别在于 akashic-agent 的推送是全自动漂移系统，我的是基于记忆的 LLM 判断推送，设计更简单但更易理解。"
+    </div>
+  </div>
+
+  <p style="text-align:center;color:#b2bec3;font-size:0.82rem;margin-top:40px;">用浏览器打开此文件 · 内容同步于 my-agent项目全貌.md · 最后更新：2026-06-14（计划修订版）</p>
+
+</div>
+</body>
+</html>
