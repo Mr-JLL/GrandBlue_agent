@@ -1,3 +1,53 @@
+# 题 1 
+text = "hello"
+try:
+    result = text + 100
+    print(result)
+except TypeError as e:
+    print(f"类型错误: {e}")
+
+# 题 2  
+import random
+def risky_task():
+    if random.random()<0.7:
+        raise Exception("模拟网络错误")
+    return "成功"
+for item in range(3):
+    try:
+        risky_task()
+        print("成功")
+        break
+    except Exception as e:
+        print(f"错误为：{e}")
+        if int(item)==2:
+            print("全部失败")
+        else:
+            print(f"第{int(item)+1}次失败")
+
+# 题 3
+import asyncio
+
+async def risky_task():
+    if random.random()<0.7:
+        raise Exception("模拟网络错误")
+    return "成功"
+
+async def run_with_retry():
+    for item in range(3):
+        try:
+            await risky_task()
+            print("成功")
+            break
+        except Exception as e:
+            print(f"错误为{e}")
+        if int(item)==2:
+            print("全部失败")
+        else:
+            print(f"第{int(item)+1}次失败")
+            await asyncio.sleep(2)
+asyncio.run(run_with_retry())
+
+# llm.py修改 
 from openai import AsyncOpenAI
 import httpx
 import asyncio
@@ -16,7 +66,7 @@ async def ask(prompt):
             base_url="https://api.deepseek.com",
             http_client=httpx.AsyncClient(
                 proxy="http://127.0.0.1:7890",
-                timeout=30      # timeout=30表示一次请求最多等多久
+                timeout=30
             )
         )
 
@@ -40,7 +90,7 @@ async def ask(prompt):
                 print("全部失败")
             else:
                 print(f"第{int(item)+1}次失败")
-                await asyncio.sleep(2)
+            await asyncio.sleep(2)
 
 
 
@@ -55,10 +105,14 @@ if __name__=="__main__":
     result=asyncio.run(ask("列举出近十二年图灵奖和物理学奖得主名单"))
     # asyncio.run()的含义是"真正执行这个任务，等它跑完，把结果拿回来"
     # async def定义的函数必须用asyncio.run()启动，否则不会真的执行
-    if result is None:
-        print("全部失败")
-    else:
-        print(result)
+    print(result)
+
+
+
+
+
+
+
 
 
 
